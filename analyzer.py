@@ -52,6 +52,9 @@ class DomainAnalyzer:
         self.solver2coverage_graph_data = {}  # {solver_type: coverage_graph_data(DataFrame)}
         self.hindsight_graph_data = None  # DataFrame of the hindsight graph
         self.joint_graph_coverage_data = None  # DataFrame of the joint graph's coverage score
+        # coverage table:
+        self.coverage_table = {}  # {solver_type: {Md: min dependencies to get max coverage, C: max coverage}}
+        self.max_dep = None  # maximal amount of dependencies in all of the problems
 
     def add_solver(self, solver_type, csv_file_path):
         """ Adds a solver to the DomainAnalyzer.
@@ -63,15 +66,12 @@ class DomainAnalyzer:
         """
         self.solver2csv_file[solver_type] = csv_file_path
 
-    def analyze_results(self, output_folder_path):
+    def analyze_results(self):
         """ Analyzes the results given, and creates graphs and summarized DataFrames.
-
-        :param output_folder_path: the path to save the results at
-        :type output_folder_path: str
         """
         self.read_results()
-        self.analyze_coverage(output_folder_path)
-        self.analyze_cost(output_folder_path)
+        self.analyze_coverage()
+        self.analyze_cost()
 
     def read_results(self):
         """ Reads all results files.
@@ -144,20 +144,29 @@ class DomainAnalyzer:
         self.solver2dict_problem2data[solver_type] = problem2data
         self.solver2dict_problem2success_data[solver_type] = problem2success_data
 
-    def analyze_coverage(self, output_folder_path):
+    def analyze_coverage(self):
         """ Analyze the coverage of the results files for each of the solvers.
-
-        :param output_folder_path: the path to save the results at
-        :type output_folder_path: str
         """
         for solver_type in self.solver2data.keys():
             self.analyze_coverage_for_solver(solver_type)
         self.calculate_hindsight_graph()
         self.analyze_summarized_coverage_results()
-        self.show_coverage_graph()
-        i=0
+        self.create_coverage_graph()
+        self.create_coverage_table()
 
-    def show_coverage_graph(self):
+    def create_coverage_table(self):
+        """ Creates a coverage table's entry for this domain and planner.
+            The format of the table is specified in the paper.
+        """
+        self.max_dep = max(self.published_dep_axis_set)
+        for column in self.joint_graph_coverage_data.columns:
+            Md = self.joint_graph_coverage_data[column].idxmax()
+            C = self.joint_graph_coverage_data[column].max()
+            self.coverage_table[column] = {'Md': Md, 'C': C}
+
+    def create_coverage_graph(self):
+        """ Creates a coverage graph for this domain and planner.
+        """
         width1 = 4
         height1 = 2
         width_height_1 = (width1, height1)
@@ -182,6 +191,7 @@ class DomainAnalyzer:
                                                      lw=style['width'],
                                                      color=style['color'],
                                                      label=col)
+
         plt.xlabel('#Dependencies')
         plt.ylabel('#Solved problems')
         plt.grid(True)
@@ -194,7 +204,7 @@ class DomainAnalyzer:
             plt.legend(loc='lower right')
 
         if self.save_figure:
-            plt.savefig(fr'figures\figure_{self.planner_type}_{self.domain_name}.png', dpi=100, bbox_inches='tight')
+            plt.savefig(fr'figures\coverage_{self.planner_type}_{self.domain_name}.png', dpi=100, bbox_inches='tight')
         else:
             plt.show()
 
@@ -257,6 +267,20 @@ class DomainAnalyzer:
         df_graph.sort_index(inplace=True)
         return df_graph
 
+    def analyze_cost(self):
+        """ Analyzes the cost features in the results file.
+        """
+        for solver_type in self.solver2data.keys():
+            self.analyze_cost_table(solver_type)
+
+    def analyze_cost_table(self, solver_type):
+        """ Analyzes the cost table entry of the given solver.
+
+        :param solver_type: the solver we want to analyze it's cost table entry
+        :type solver_type: str
+        """
+        raise Exception('Need to implement this.')
+
     def initialize_percentages(self):
         """ Initializes the self.percentages list, with all of the percentages we need to reveal.
             The list shall contain the following percentages: [0:0.05:1]
@@ -267,4 +291,4 @@ class DomainAnalyzer:
 analyzer = DomainAnalyzer(planner_type='Joint_Projection', domain_name='BlocksWorld')
 for i in range(1, 5):
     analyzer.add_solver('m' + str(i), r"C:\Users\User\Desktop\second_degree\תזה\ICAPS2021\results_analyzer\m" + str(i) + r".csv")
-analyzer.analyze_results('output')
+analyzer.analyze_results()
