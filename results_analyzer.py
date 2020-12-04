@@ -1,6 +1,18 @@
 from domain_analyzer import DomainAnalyzer
 from planner_analyzer import PlannerAnalyzer
 
+# ********************************************************************************************************************
+# change the base path in your machine:
+base_folder_name = r'C:\Users\User\Desktop\second_degree\code\GPPP(last_v)'  # my computer path
+# base_folder_name = r'D:\GPPP(last_v)'  # left server path
+# base_folder_name = r'D:\rotem\GPPP(last_v)'  # right server path
+# ********************************************************************************************************************
+# choose the domains, planners and solvers that you want to analyze their results now:
+specific_domains = ['BlocksWorld']
+specific_planners = ['Joint_Projection']
+specific_solvers = ['m1', 'm2', 'm3', 'm4']
+# ********************************************************************************************************************
+
 all_domains = {'BlocksWorld': 'blocksworld',
                'Depot': 'depot',
                'Driverlog': 'driverlog',
@@ -17,11 +29,7 @@ all_solvers = {'m1': 'Actions_Achiever',
                'm3': 'New_Actions_Achiever',
                'm4': 'New_Public_Predicates_Achiever'}
 
-specific_domains = ['BlocksWorld']
-specific_planners = ['Joint_Projection']
-specific_solvers = ['m1', 'm2', 'm3', 'm4']
-
-main_results_path = r'...Experiments'
+main_results_path = base_folder_name + r'\Experiment'
 print('Starting to analyze results.')
 for p in specific_planners:
     planner_path = main_results_path + '\\' + all_planners[p] + r'\Dependecies\No_Collaboration'

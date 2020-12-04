@@ -1,6 +1,5 @@
 from domain_analyzer import DomainAnalyzer
 from pathlib import Path
-import pandas as pd
 
 
 class PlannerAnalyzer:

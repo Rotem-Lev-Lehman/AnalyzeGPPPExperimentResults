@@ -5,9 +5,48 @@ import matplotlib.pyplot as plt
 
 
 def drange(x, y, jump):
-  while x <= y:
-    yield float(x)
-    x += decimal.Decimal(jump)
+    """ A generator for sorted values in the range: [x, y], with jumps of jump.
+
+    :param x: the lowest value generated
+    :type x: float
+    :param y: the highest value generated
+    :type y: float
+    :param jump: the jumps between values generated
+    :type jump: str
+    :return: the generator
+    """
+    while x <= y:
+        yield float(x)
+        x += decimal.Decimal(jump)
+
+
+def get_regular_plot_styles_dict():
+    """ Returns the graph plotting style for regular domains (with differences between the methods).
+
+    :return: the style dictionary in the format of:
+            {solver_type: {'style':line_style, 'color':line_color, 'width':line_width}}
+    :rtype: dict
+    """
+    styles_dict = {'m1': {'style': '-', 'color': 'black', 'width': 3},
+                   'm2': {'style': ':', 'color': 'red', 'width': 3},
+                   'm3': {'style': '-', 'color': 'green', 'width': 2},
+                   'm4': {'style': '--', 'color': 'purple', 'width': 2},
+                   'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
+                   }
+    return styles_dict
+
+
+def get_solo_solver_plot_styles_dict():
+    """ Returns the graph plotting style for domains without differences between the methods.
+
+    :return: the style dictionary in the format of:
+            {solver_type: {'style':line_style, 'color':line_color, 'width':line_width}}
+    :rtype: dict
+    """
+    styles_dict = {'m1': {'style': '-', 'color': 'blue', 'width': 2},
+                   'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
+                   }
+    return styles_dict
 
 
 class DomainAnalyzer:
@@ -209,7 +248,8 @@ class DomainAnalyzer:
             plt.legend(loc='lower right')
 
         if self.save_figure:
-            plt.savefig(fr'{output_folder}\coverage_{self.planner_type}_{self.domain_name}.png', dpi=100, bbox_inches='tight')
+            plt.savefig(fr'{output_folder}\coverage_{self.planner_type}_{self.domain_name}.png', dpi=100,
+                        bbox_inches='tight')
         else:
             plt.show()
 
@@ -322,25 +362,8 @@ class DomainAnalyzer:
         self.percentages = list(drange(0, 1, '0.05'))
 
 
-def get_regular_plot_styles_dict():
-    styles_dict = {'m1': {'style': '-', 'color': 'black', 'width': 3},
-                   'm2': {'style': ':', 'color': 'red', 'width': 3},
-                   'm3': {'style': '-', 'color': 'green', 'width': 2},
-                   'm4': {'style': '--', 'color': 'purple', 'width': 2},
-                   'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
-                   }
-    return styles_dict
-
-
-def get_solo_solver_plot_styles_dict():
-    styles_dict = {'m1': {'style': '-', 'color': 'blue', 'width': 2},
-                   'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
-                   }
-    return styles_dict
-
 # Usage example:
 # analyzer = DomainAnalyzer(planner_type='Joint_Projection', domain_name='BlocksWorld')
 # for i in range(1, 5):
 #     analyzer.add_solver('m' + str(i), r"C:\Users\User\Desktop\second_degree\תזה\ICAPS2021\results_analyzer\m" + str(i) + r".csv")
 # analyzer.analyze_results()
-
