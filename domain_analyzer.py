@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import decimal
 import matplotlib.pyplot as plt
 
@@ -55,6 +56,8 @@ class DomainAnalyzer:
         # coverage table:
         self.coverage_table = {}  # {solver_type: {Md: min dependencies to get max coverage, C: max coverage}}
         self.max_dep = None  # maximal amount of dependencies in all of the problems
+        # cost table:
+        self.cost_table_entry = {}  # {solver_type: {Min:..., Max:..., Min. dep:..., Max. dep:..., Imp.:...}}
 
     def add_solver(self, solver_type, csv_file_path):
         """ Adds a solver to the DomainAnalyzer.
@@ -66,11 +69,14 @@ class DomainAnalyzer:
         """
         self.solver2csv_file[solver_type] = csv_file_path
 
-    def analyze_results(self):
+    def analyze_results(self, output_folder):
         """ Analyzes the results given, and creates graphs and summarized DataFrames.
+
+        :param output_folder: the folder path we want to save the graph to
+        :type output_folder: str
         """
         self.read_results()
-        self.analyze_coverage()
+        self.analyze_coverage(output_folder)
         self.analyze_cost()
 
     def read_results(self):
@@ -144,14 +150,17 @@ class DomainAnalyzer:
         self.solver2dict_problem2data[solver_type] = problem2data
         self.solver2dict_problem2success_data[solver_type] = problem2success_data
 
-    def analyze_coverage(self):
+    def analyze_coverage(self, output_folder):
         """ Analyze the coverage of the results files for each of the solvers.
+
+        :param output_folder: the folder path we want to save the graph in
+        :type output_folder: str
         """
         for solver_type in self.solver2data.keys():
             self.analyze_coverage_for_solver(solver_type)
         self.calculate_hindsight_graph()
         self.analyze_summarized_coverage_results()
-        self.create_coverage_graph()
+        self.create_coverage_graph(output_folder)
         self.create_coverage_table()
 
     def create_coverage_table(self):
@@ -164,8 +173,11 @@ class DomainAnalyzer:
             C = self.joint_graph_coverage_data[column].max()
             self.coverage_table[column] = {'Md': Md, 'C': C}
 
-    def create_coverage_graph(self):
+    def create_coverage_graph(self, output_folder):
         """ Creates a coverage graph for this domain and planner.
+
+        :param output_folder: the folder path we want to save the graph in
+        :type output_folder: str
         """
         width1 = 4
         height1 = 2
@@ -174,16 +186,9 @@ class DomainAnalyzer:
         plt.figure(figsize=width_height_1)
 
         if not self.same_graph_line:
-            styles_dict = {'m1': {'style': '-', 'color': 'black', 'width': 3},
-                           'm2': {'style': '-.', 'color': 'red', 'width': 3},
-                           'm3': {'style': '-', 'color': 'green', 'width': 2},
-                           'm4': {'style': '--', 'color': 'purple', 'width': 2},
-                           'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
-                           }
+            styles_dict = get_regular_plot_styles_dict()
         else:
-            styles_dict = {'m1': {'style': '-', 'color': 'blue', 'width': 2},
-                           'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
-                           }
+            styles_dict = get_solo_solver_plot_styles_dict()
 
         for col in styles_dict.keys():
             style = styles_dict[col]
@@ -204,7 +209,7 @@ class DomainAnalyzer:
             plt.legend(loc='lower right')
 
         if self.save_figure:
-            plt.savefig(fr'figures\coverage_{self.planner_type}_{self.domain_name}.png', dpi=100, bbox_inches='tight')
+            plt.savefig(fr'{output_folder}\coverage_{self.planner_type}_{self.domain_name}.png', dpi=100, bbox_inches='tight')
         else:
             plt.show()
 
@@ -279,7 +284,36 @@ class DomainAnalyzer:
         :param solver_type: the solver we want to analyze it's cost table entry
         :type solver_type: str
         """
-        raise Exception('Need to implement this.')
+        min_costs = []
+        max_costs = []
+        min_dep_costs = []
+        max_dep_costs = []
+        improvements = []
+        for problem in self.problems:
+            success_df = self.solver2dict_problem2success_data[solver_type][problem]
+            if not success_df.empty:
+                # There was a success
+                cost_col = success_df[' plan make span']
+
+                min_cost = cost_col.min()
+                max_cost = cost_col.max()
+                min_dep_cost = cost_col.iloc[0]
+                max_dep_cost = cost_col.iloc[-1]
+                improvement = (min_dep_cost - min_cost) / min_dep_cost
+
+                min_costs.append(min_cost)
+                max_costs.append(max_cost)
+                min_dep_costs.append(min_dep_cost)
+                max_dep_costs.append(max_dep_cost)
+                improvements.append(improvement)
+            else:
+                print(f'problem: {problem} was never solved')
+
+        self.cost_table_entry[solver_type] = {'Min': np.mean(min_costs),
+                                              'Max': np.mean(max_costs),
+                                              'Min. dep': np.mean(min_dep_costs),
+                                              'Max. dep': np.mean(max_dep_costs),
+                                              'Imp.': np.mean(improvements)}
 
     def initialize_percentages(self):
         """ Initializes the self.percentages list, with all of the percentages we need to reveal.
@@ -288,7 +322,25 @@ class DomainAnalyzer:
         self.percentages = list(drange(0, 1, '0.05'))
 
 
-analyzer = DomainAnalyzer(planner_type='Joint_Projection', domain_name='BlocksWorld')
-for i in range(1, 5):
-    analyzer.add_solver('m' + str(i), r"C:\Users\User\Desktop\second_degree\תזה\ICAPS2021\results_analyzer\m" + str(i) + r".csv")
-analyzer.analyze_results()
+def get_regular_plot_styles_dict():
+    styles_dict = {'m1': {'style': '-', 'color': 'black', 'width': 3},
+                   'm2': {'style': ':', 'color': 'red', 'width': 3},
+                   'm3': {'style': '-', 'color': 'green', 'width': 2},
+                   'm4': {'style': '--', 'color': 'purple', 'width': 2},
+                   'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
+                   }
+    return styles_dict
+
+
+def get_solo_solver_plot_styles_dict():
+    styles_dict = {'m1': {'style': '-', 'color': 'blue', 'width': 2},
+                   'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
+                   }
+    return styles_dict
+
+# Usage example:
+# analyzer = DomainAnalyzer(planner_type='Joint_Projection', domain_name='BlocksWorld')
+# for i in range(1, 5):
+#     analyzer.add_solver('m' + str(i), r"C:\Users\User\Desktop\second_degree\תזה\ICAPS2021\results_analyzer\m" + str(i) + r".csv")
+# analyzer.analyze_results()
+
