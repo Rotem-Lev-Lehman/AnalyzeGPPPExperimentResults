@@ -93,10 +93,14 @@ class DomainAnalyzer:
         self.hindsight_graph_data = None  # DataFrame of the hindsight graph
         self.joint_graph_coverage_data = None  # DataFrame of the joint graph's coverage score
         # coverage table:
-        self.coverage_table = {}  # {solver_type: {Md: min dependencies to get max coverage, C: max coverage}}
+        self.coverage_table = {}  # {solver_type: {Md%: min dependencies to get max coverage percentage from max dep,
+        #                                            C: max coverage,
+        #                                       C_last: the coverage when revealing all dependencies}}
         self.max_dep = None  # maximal amount of dependencies in all of the problems
         # cost table:
         self.cost_table_entry = {}  # {solver_type: {Min:..., Max:..., Min. dep:..., Max. dep:..., Imp.:...}}
+        # optimal stuff:
+        self.solver2dict_problem2first_solved = {}  # {solver_type: {problem_name: #min dependencies needed to solve}}
 
     def add_solver(self, solver_type, csv_file_path):
         """ Adds a solver to the DomainAnalyzer.
@@ -197,6 +201,7 @@ class DomainAnalyzer:
         """
         for solver_type in self.solver2data.keys():
             self.analyze_coverage_for_solver(solver_type)
+            self.find_first_solved_for_each_problem(solver_type)
         self.calculate_hindsight_graph()
         self.analyze_summarized_coverage_results()
         self.create_coverage_graph(output_folder)
@@ -210,7 +215,9 @@ class DomainAnalyzer:
         for column in self.joint_graph_coverage_data.columns:
             Md = self.joint_graph_coverage_data[column].idxmax()
             C = self.joint_graph_coverage_data[column].max()
-            self.coverage_table[column] = {'Md': Md, 'C': C}
+            C_last = self.joint_graph_coverage_data[column].iloc[-1]
+            Md_percentage = Md / self.max_dep
+            self.coverage_table[column] = {'Md%': Md_percentage, 'C': C, 'C_last': C_last}
 
     def create_coverage_graph(self, output_folder):
         """ Creates a coverage graph for this domain and planner.
@@ -361,9 +368,27 @@ class DomainAnalyzer:
         """
         self.percentages = list(drange(0, 1, '0.05'))
 
+    def find_first_solved_for_each_problem(self, solver_type):
+        """ Finds the dependencies needed for solving each problem for the first time.
+
+        :param solver_type: the solver we are checking now
+        :type solver_type: str
+        """
+        prob2success_df = self.solver2dict_problem2success_data[solver_type]
+        problem2first_solved = {}
+        for prob in self.problems:
+            success_df = prob2success_df[prob]
+            if not success_df.empty:
+                dep_first_solved = success_df[' amount of dependecies published'].iloc[0]
+            else:
+                dep_first_solved = -1
+            problem2first_solved[prob] = dep_first_solved
+        self.solver2dict_problem2first_solved[solver_type] = problem2first_solved
+
 
 # Usage example:
-# analyzer = DomainAnalyzer(planner_type='Joint_Projection', domain_name='BlocksWorld')
+# analyzer = DomainAnalyzer(planner_type='Joint_Projection', domain_name='BlocksWorld', save_figure=False)
 # for i in range(1, 5):
 #     analyzer.add_solver('m' + str(i), r"C:\Users\User\Desktop\second_degree\תזה\ICAPS2021\results_analyzer\m" + str(i) + r".csv")
-# analyzer.analyze_results()
+# analyzer.analyze_results(r'result\Joint_Projection\figures')
+# i=0
