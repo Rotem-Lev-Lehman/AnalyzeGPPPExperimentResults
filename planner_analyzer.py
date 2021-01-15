@@ -31,20 +31,24 @@ class PlannerAnalyzer:
         """
         self.domain_analyzers.append(domain_analyzer)
 
-    def analyze_planner_results(self):
+    def analyze_planner_results(self, domains_to_draw_graphs_to):
         """ Analyzes the planner results for all of the given domain analyzers.
         """
-        self.generate_tables()
+        self.generate_tables(domains_to_draw_graphs_to)
         self.write_tables_to_csv_file()
 
-    def generate_tables(self):
+    def generate_tables(self, domains_to_draw_graphs_to):
         """ Generates the results tables, and saves graphs.
+
+        :param domains_to_draw_graphs_to: a set of domains that we want to draw graphs for
+        :type domains_to_draw_graphs_to: set
         """
         coverage_table = {}
         cost_table = {}
         optimal_table = {}
         for domain_analyzer in self.domain_analyzers:
-            domain_analyzer.analyze_results(self.graphs_folder_path)
+            draw_graph_for_domain = domain_analyzer.domain_name in domains_to_draw_graphs_to
+            domain_analyzer.analyze_results(self.graphs_folder_path, draw_graph_for_domain)
 
             coverage_table_entry = domain_analyzer.coverage_table
             max_dep = domain_analyzer.max_dep
@@ -168,9 +172,9 @@ class PlannerAnalyzer:
 
 
 # Usage example:
-domain_analyzer = DomainAnalyzer(planner_type='Joint_Projection', domain_name='BlocksWorld')
-for i in range(1, 5):
-    domain_analyzer.add_solver('m' + str(i), r"C:\Users\User\Desktop\second_degree\תזה\ICAPS2021\results_analyzer\m" + str(i) + r".csv")
-planner_analyzer = PlannerAnalyzer(planner_type='Joint_Projection')
-planner_analyzer.add_domain_analyzer(domain_analyzer)
-planner_analyzer.analyze_planner_results()
+# domain_analyzer = DomainAnalyzer(planner_type='Joint_Projection', domain_name='BlocksWorld')
+# for i in range(1, 5):
+#     domain_analyzer.add_solver('m' + str(i), r"C:\Users\User\Desktop\second_degree\תזה\ICAPS2021\results_analyzer\m" + str(i) + r".csv")
+# planner_analyzer = PlannerAnalyzer(planner_type='Joint_Projection')
+# planner_analyzer.add_domain_analyzer(domain_analyzer)
+# planner_analyzer.analyze_planner_results()

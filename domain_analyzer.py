@@ -31,6 +31,7 @@ def get_regular_plot_styles_dict():
                    'm2': {'style': ':', 'color': 'red', 'width': 3},
                    'm3': {'style': '-', 'color': 'green', 'width': 2},
                    'm4': {'style': '--', 'color': 'purple', 'width': 2},
+                   'Random': {'style': '-', 'color': 'blue', 'width': 2},
                    'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
                    }
     return styles_dict
@@ -92,6 +93,9 @@ class DomainAnalyzer:
         self.solver2coverage_graph_data = {}  # {solver_type: coverage_graph_data(DataFrame)}
         self.hindsight_graph_data = None  # DataFrame of the hindsight graph
         self.joint_graph_coverage_data = None  # DataFrame of the joint graph's coverage score
+        # random solver stuff:
+        self.random_solver_name = None
+        self.has_random_solver = False
         # coverage table:
         self.coverage_table = {}  # {solver_type: {Md%: min dependencies to get max coverage percentage from max dep,
         #                                            C: max coverage,
@@ -102,24 +106,31 @@ class DomainAnalyzer:
         # optimal stuff:
         self.solver2dict_problem2first_solved = {}  # {solver_type: {problem_name: #min dependencies needed to solve}}
 
-    def add_solver(self, solver_type, csv_file_path):
+    def add_solver(self, solver_type, csv_file_path, random_solver):
         """ Adds a solver to the DomainAnalyzer.
 
         :param solver_type: the type of the solver
         :type solver_type: str
         :param csv_file_path: the path to the results of the solver
         :type csv_file_path: str
+        :param random_solver: indicates whether the given solver is the random solver (True), or not (False).
+        :type random_solver: bool
         """
         self.solver2csv_file[solver_type] = csv_file_path
+        if random_solver:
+            self.has_random_solver = True
+            self.random_solver_name = solver_type
 
-    def analyze_results(self, output_folder):
+    def analyze_results(self, output_folder, draw_graph_for_domain):
         """ Analyzes the results given, and creates graphs and summarized DataFrames.
 
         :param output_folder: the folder path we want to save the graph to
         :type output_folder: str
+        :param draw_graph_for_domain: indicates wheter we want to draw a coverage graph for this domain (True) or not (False)
+        :type draw_graph_for_domain: bool
         """
         self.read_results()
-        self.analyze_coverage(output_folder)
+        self.analyze_coverage(output_folder, draw_graph_for_domain)
         self.analyze_cost()
 
     def read_results(self):
@@ -193,18 +204,21 @@ class DomainAnalyzer:
         self.solver2dict_problem2data[solver_type] = problem2data
         self.solver2dict_problem2success_data[solver_type] = problem2success_data
 
-    def analyze_coverage(self, output_folder):
+    def analyze_coverage(self, output_folder, draw_graph_for_domain):
         """ Analyze the coverage of the results files for each of the solvers.
 
         :param output_folder: the folder path we want to save the graph in
         :type output_folder: str
+        :param draw_graph_for_domain: indicates wheter we want to draw a coverage graph for this domain (True) or not (False)
+        :type draw_graph_for_domain: bool
         """
         for solver_type in self.solver2data.keys():
             self.analyze_coverage_for_solver(solver_type)
             self.find_first_solved_for_each_problem(solver_type)
         self.calculate_hindsight_graph()
         self.analyze_summarized_coverage_results()
-        self.create_coverage_graph(output_folder)
+        if draw_graph_for_domain:
+            self.create_coverage_graph(output_folder)
         self.create_coverage_table()
 
     def create_coverage_table(self):
@@ -213,6 +227,9 @@ class DomainAnalyzer:
         """
         self.max_dep = max(self.published_dep_axis_set)
         for column in self.joint_graph_coverage_data.columns:
+            if self.has_random_solver and column == self.random_solver_name:
+                # Do not add the random solver to the table
+                continue
             Md = self.joint_graph_coverage_data[column].idxmax()
             C = self.joint_graph_coverage_data[column].max()
             C_last = self.joint_graph_coverage_data[column].iloc[-1]
@@ -323,6 +340,9 @@ class DomainAnalyzer:
         """ Analyzes the cost features in the results file.
         """
         for solver_type in self.solver2data.keys():
+            if self.has_random_solver and solver_type == self.random_solver_name:
+                # Do not add the random solver to the cost table
+                continue
             self.analyze_cost_table(solver_type)
 
     def analyze_cost_table(self, solver_type):
