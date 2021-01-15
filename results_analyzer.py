@@ -3,13 +3,13 @@ from planner_analyzer import PlannerAnalyzer
 
 # ********************************************************************************************************************
 # change the base path in your machine:
-base_folder_name = r'C:\Users\User\Desktop\second_degree\code\GPPP(last_v)'  # my computer path
-# base_folder_name = r'D:\GPPP(last_v)'  # left server path
+# base_folder_name = r'C:\Users\User\Desktop\second_degree\code\GPPP(last_v)'  # my computer path
+base_folder_name = r'D:\GPPP(last_v)'  # left server path
 # base_folder_name = r'D:\rotem\GPPP(last_v)'  # right server path
 # ********************************************************************************************************************
 # choose the domains, planners and solvers that you want to analyze their results now:
 specific_domains = ['BlocksWorld', 'Elevators']
-domains_to_draw_graphs_to = {'BlocksWorld'}
+domains_to_draw_graphs_to = {'BlocksWorld', 'Elevators'}
 specific_planners = ['Joint_Projection']
 specific_solvers = ['m1', 'm2', 'm3', 'm4', 'Random']
 # ********************************************************************************************************************
@@ -22,8 +22,8 @@ all_domains = {'BlocksWorld': 'blocksworld',
                'Rovers': 'rovers',
                'ZenoTravel': 'zenotravel'}
 
-all_planners = {'MAFS': 'MAFS_Projection_ICAPS',
-                'Joint_Projection': 'Projection_Only_ICAPS'}
+all_planners = {'MAFS': 'MAFS_Projection_IJCAI',
+                'Joint_Projection': 'Projection_Only_IJCAI'}
 
 all_solvers = {'m1': 'Actions_Achiever',
                'm2': 'Public_Predicates_Achiever',

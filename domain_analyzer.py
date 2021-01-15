@@ -180,7 +180,7 @@ class DomainAnalyzer:
             sub_df = df[df[' folder name'] == problem]
             sub_df.sort_values(by=['Percentage of actions selected'], inplace=True)
             problem2data[problem] = sub_df
-            all_percentages = list(sub_df['Percentage of actions selected'])
+            all_percentages = sorted(list(sub_df['Percentage of actions selected'].unique()))
             if all_percentages != self.percentages:
                 raise Exception('The percentages must agree!')
 
@@ -213,7 +213,8 @@ class DomainAnalyzer:
         :type draw_graph_for_domain: bool
         """
         for solver_type in self.solver2data.keys():
-            self.analyze_coverage_for_solver(solver_type)
+            random_solver = self.has_random_solver and self.random_solver_name == solver_type
+            self.analyze_coverage_for_solver(solver_type, random_solver)
             self.find_first_solved_for_each_problem(solver_type)
         self.calculate_hindsight_graph()
         self.analyze_summarized_coverage_results()
@@ -298,29 +299,37 @@ class DomainAnalyzer:
                     row['coverage'] += 1
         self.hindsight_graph_data = df_graph
 
-    def analyze_coverage_for_solver(self, solver_type):
+    def analyze_coverage_for_solver(self, solver_type, random_solver):
         """ Analyze the coverage of a specific solver
 
         :param solver_type: the solver type we want to analyze
         :type solver_type: str
+        :param random_solver: indicates whether this solver is a random solver (True) or not (False)
+        :type random_solver: bool
         """
         df_graph = self.get_empty_df_graph()
-        df_graph['coverage'] = 0
+        df_graph['coverage'] = float(0)
         for problem in self.problems:
             df = self.solver2dict_problem2data[solver_type][problem]
-            previously_success = False
+
+            previous_val = 0
             for i, row in df_graph.iterrows():
                 if i in df[' amount of dependecies published'].values:
                     sub_df = df.loc[df[' amount of dependecies published'] == i]
-                    if sub_df[' success/failure'].iloc[0] == '  success':
-                        row['coverage'] += 1
-                        previously_success = True
+                    if random_solver:
+                        success_rate = np.average(sub_df[' success/failure'] == '  success')
+                        row['coverage'] += success_rate
+                        previous_val = success_rate
                     else:
-                        previously_success = False
-                elif previously_success:
+                        if sub_df[' success/failure'].iloc[0] == '  success':
+                            row['coverage'] += 1
+                            previous_val = 1
+                        else:
+                            previous_val = 0
+                else:
                     # if the current amount of dependencies is never revealed in the current problem,
                     # then just assume it is as it was when the problem did reveal this amount of dependencies.
-                    row['coverage'] += 1
+                    row['coverage'] += previous_val
         self.solver2coverage_graph_data[solver_type] = df_graph
 
     def get_empty_df_graph(self):
