@@ -8,8 +8,8 @@ base_folder_name = r'D:\GPPP(last_v)'  # left server path
 # base_folder_name = r'D:\rotem\GPPP(last_v)'  # right server path
 # ********************************************************************************************************************
 # choose the domains, planners and solvers that you want to analyze their results now:
-specific_domains = ['BlocksWorld', 'Elevators']
-domains_to_draw_graphs_to = {'BlocksWorld', 'Elevators'}
+specific_domains = [('BlocksWorld', None), ('Elevators', None), ('Depot', 2000)]
+domains_to_draw_graphs_to = {'BlocksWorld', 'Elevators', 'Depot'}
 specific_planners = ['Joint_Projection']
 specific_solvers = ['m1', 'm2', 'm3', 'm4', 'Random']
 # ********************************************************************************************************************
@@ -38,9 +38,9 @@ for p in specific_planners:
     print('********************************************************************************************************')
     print(f'Now analyzing results of the planner: {p}')
     planner_analyzer = PlannerAnalyzer(p)
-    for d in specific_domains:
+    for d, max_dep_in_graph in specific_domains:
         print(f'\tDomain: {d}')
-        domain_analyzer = DomainAnalyzer(p, d)
+        domain_analyzer = DomainAnalyzer(p, d, truncate_x_axis_at=max_dep_in_graph)
         for s in specific_solvers:
             if s == 'Random':
                 random_solver = True

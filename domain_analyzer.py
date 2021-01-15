@@ -32,6 +32,8 @@ def get_regular_plot_styles_dict():
                    'm3': {'style': '-', 'color': 'green', 'width': 2},
                    'm4': {'style': '--', 'color': 'purple', 'width': 2},
                    'Random': {'style': '-', 'color': 'blue', 'width': 2},
+                   'Random_upper_bound': {'style': '--', 'color': 'blue', 'width': 1},
+                   'Random_lower_bound': {'style': '--', 'color': 'blue', 'width': 1},
                    'Hindsight': {'style': '--', 'color': 'yellow', 'width': 2}
                    }
     return styles_dict
@@ -284,7 +286,12 @@ class DomainAnalyzer:
         joint_graph_df = self.get_empty_df_graph()
         joint_graph_df['Hindsight'] = self.hindsight_graph_data['coverage']
         for solver_type, df_graph_solver in self.solver2coverage_graph_data.items():
-            joint_graph_df[solver_type] = df_graph_solver
+            if self.has_random_solver and solver_type == self.random_solver_name:
+                joint_graph_df[solver_type] = df_graph_solver['coverage']
+                joint_graph_df['Random_upper_bound'] = df_graph_solver['upper_bound']
+                joint_graph_df['Random_lower_bound'] = df_graph_solver['lower_bound']
+            else:
+                joint_graph_df[solver_type] = df_graph_solver
         self.joint_graph_coverage_data = joint_graph_df
 
     def calculate_hindsight_graph(self):
@@ -309,17 +316,28 @@ class DomainAnalyzer:
         """
         df_graph = self.get_empty_df_graph()
         df_graph['coverage'] = float(0)
+        if random_solver:
+            df_graph['lower_bound'] = float(0)
+            df_graph['upper_bound'] = float(0)
         for problem in self.problems:
             df = self.solver2dict_problem2data[solver_type][problem]
 
             previous_val = 0
+            previous_upper_val = 0
+            previous_lower_val = 0
             for i, row in df_graph.iterrows():
                 if i in df[' amount of dependecies published'].values:
                     sub_df = df.loc[df[' amount of dependecies published'] == i]
                     if random_solver:
-                        success_rate = np.average(sub_df[' success/failure'] == '  success')
+                        trials = sub_df[' success/failure'] == '  success'
+                        success_rate = np.average(trials)
                         row['coverage'] += success_rate
                         previous_val = success_rate
+
+                        previous_upper_val = int(np.any(trials))
+                        previous_lower_val = int(np.all(trials))
+                        row['lower_bound'] += previous_lower_val
+                        row['upper_bound'] += previous_upper_val
                     else:
                         if sub_df[' success/failure'].iloc[0] == '  success':
                             row['coverage'] += 1
@@ -330,6 +348,9 @@ class DomainAnalyzer:
                     # if the current amount of dependencies is never revealed in the current problem,
                     # then just assume it is as it was when the problem did reveal this amount of dependencies.
                     row['coverage'] += previous_val
+                    if random_solver:
+                        row['lower_bound'] += previous_lower_val
+                        row['upper_bound'] += previous_upper_val
         self.solver2coverage_graph_data[solver_type] = df_graph
 
     def get_empty_df_graph(self):
