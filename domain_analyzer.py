@@ -200,7 +200,7 @@ class DomainAnalyzer:
             # Save the hindsight:
             if problem not in self.problem2hindsight_val.keys():
                 self.problem2hindsight_val[problem] = hindsight
-            elif self.problem2hindsight_val[problem] > hindsight:
+            elif np.isnan(self.problem2hindsight_val[problem]) or self.problem2hindsight_val[problem] > hindsight:
                 self.problem2hindsight_val[problem] = hindsight
 
         self.solver2dict_problem2data[solver_type] = problem2data

@@ -18,7 +18,7 @@ class PlannerAnalyzer:
         self.solvers = set()  # this will contain all of the solvers we are using.
         self.domain2problems = {}  # {domain: all_problems_in_domain(set)}
         # results saving path:
-        self.results_folder_path = fr'IJCAI_results2\{self.planner_type}'
+        self.results_folder_path = fr'IJCAI_results4\{self.planner_type}'
         Path(self.results_folder_path).mkdir(parents=True, exist_ok=True)
         self.graphs_folder_path = self.results_folder_path + r'\figures'
         Path(self.graphs_folder_path).mkdir(parents=True, exist_ok=True)

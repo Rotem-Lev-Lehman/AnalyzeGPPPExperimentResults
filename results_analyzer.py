@@ -8,8 +8,11 @@ base_folder_name = r'D:\GPPP(last_v)'  # left server path
 # base_folder_name = r'D:\rotem\GPPP(last_v)'  # right server path
 # ********************************************************************************************************************
 # choose the domains, planners and solvers that you want to analyze their results now:
-specific_domains = [('BlocksWorld', None), ('Elevators', None), ('Depot', 2000)]
-domains_to_draw_graphs_to = {'BlocksWorld', 'Elevators', 'Depot'}
+# specific_domains = [('BlocksWorld', None), ('Elevators', None), ('Depot', 2000)]
+# specific_domains = [('Logistics', None), ('Driverlog', None)]
+specific_domains = [('ZenoTravel', None)]
+# domains_to_draw_graphs_to = {'BlocksWorld', 'Elevators', 'Depot'}
+domains_to_draw_graphs_to = {'ZenoTravel'}
 specific_planners = ['Joint_Projection']
 specific_solvers = ['m1', 'm2', 'm3', 'm4', 'Random']
 # ********************************************************************************************************************
